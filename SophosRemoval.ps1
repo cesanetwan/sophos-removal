@@ -7,6 +7,15 @@ $ErrorActionPreference = 'SilentlyContinue'
 foreach ($svc in Get-Service -DisplayName Sophos*) {
     Stop-Service -displayname $svc.DisplayName
 }
+if (Test-Path 'C:\ProgramData\Sophos\Sophos Anti-Virus\Config\machine.xml') {
+       [xml]$sophosConfig = Get-Content 'C:\ProgramData\Sophos\Sophos Anti-Virus\Config\machine.xml'
+       if (($sophosConfig.configuration.components.TamperProtectionManagement.settings.enabled) -And ($sophosConfig.configuration.components.TamperProtectionManagement.settings.enabled -eq "true")) {
+          $sophosConfig.configuration.components.TamperProtectionManagement.settings.enabled = 'false'
+          $sophosConfig.Save('C:\ProgramData\Sophos\Sophos Anti-Virus\Config\machine.xml')
+          Start-Service -displayname "Sophos Anti-Virus" -Wait
+          Stop-Service -displayname "Sophos Anti-Virus"
+       }
+}
 foreach ($sophos32product in (Get-ChildItem HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall | Get-ItemProperty | Where-Object {$_.DisplayName -like "Sophos*"})) {
     if ($sophos32product -ne $null) {
         $UninstallGUID = $sophos32product.PSChildName
